@@ -1,0 +1,959 @@
+﻿<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Note Ahda - Space Sanctuary Mode</title>
+    <style>
+        :root {
+            --ink: #100b1d; /* Very deep purple-black */
+            --paper-dark: #2c1a4b; /* Deep purple */
+            --paper-light: #52358c; /* Medium purple */
+            --line-space: #a98fdf; /* Lavender for lines */
+            --line-2-space: #cdb4ff; /* Light lavender for lines */
+            --blue: #8f72ff; /* Not used much, kept for variable consistency */
+            --blue-2: #b59eff;
+            --blue-3: #e2d9ff;
+            --heart: #c19cff; /* Heart purple-pink */
+            --sparkle: #fffdab; /* Gold sparkle */
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            color: var(--ink);
+            font-family: "Lucida Console", "Courier New", monospace;
+            background:
+                repeating-linear-gradient(
+                    to bottom,
+                    var(--line-2-space) 0,
+                    var(--line-2-space) 5px,
+                    #e6deff 5px,
+                    #e6deff 14px
+                );
+        }
+
+        .app {
+            width: min(960px, 94vw);
+            min-height: 520px;
+            position: relative;
+            overflow: hidden;
+            border: 4px solid var(--ink);
+            background: linear-gradient(to bottom, #1d0e3d 0 45%, #2c1a4b 45% 100%);
+            box-shadow:
+                0 0 0 4px #4c3293,
+                0 0 0 8px #7a5cd3,
+                0 16px 35px rgba(29, 14, 61, 0.4);
+            image-rendering: pixelated;
+        }
+
+        .stripe-overlay,
+        .decor-layer,
+        .love-field,
+        .content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .stripe-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(to bottom, transparent 0 58%, rgba(82, 53, 140, 0.3) 58% 100%),
+                repeating-linear-gradient(
+                    to bottom,
+                    transparent 0 23px,
+                    rgba(82, 53, 140, 0.2) 23px 25px
+                );
+            opacity: 0.8;
+        }
+
+        .decor-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .sprite-svg {
+            position: absolute;
+            shape-rendering: crispEdges;
+            image-rendering: pixelated;
+            filter: drop-shadow(2px 2px 0 rgba(16, 11, 29, 0.5));
+            opacity: 0.96;
+        }
+
+        /* Revised Sprites */
+        .cloud-1 { width: 110px; top: 22px; left: 70px; }
+        .cloud-2 { width: 88px; top: 28px; right: 96px; }
+        .cloud-3 { width: 96px; top: 250px; right: 205px; }
+        .star-1 { width: 46px; top: 62px; left: 22px; }
+        .star-2 { width: 54px; top: 288px; left: 294px; }
+        .bolt-1 { width: 38px; top: 130px; right: 58px; }
+        
+        /* New Sprites (for added chaos) */
+        .planet-lavender { width: 120px; top: 320px; left: 40px; opacity: 0; transition: opacity 1s; }
+        .ufo-tiny { width: 60px; top: 410px; right: 150px; }
+        .cat-astronaut { width: 80px; bottom: 10px; left: 450px; }
+
+        .start-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 6;
+            display: grid;
+            place-items: center;
+            background: rgba(30, 15, 60, 0.92);
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .start-screen.hidden {
+            display: none;
+        }
+
+        .speech {
+            border: 4px solid var(--ink);
+            background: #ffffff;
+            color: #1a083a;
+            padding: 14px 18px;
+            font-size: clamp(14px, 2.3vw, 21px);
+            letter-spacing: 0.06em;
+            box-shadow: 6px 6px 0 rgba(76, 50, 147, 0.6);
+            animation: speechBounce 1.4s steps(2, end) infinite;
+        }
+
+        .speech::after {
+            content: "";
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-left: 4px solid var(--ink);
+            border-bottom: 4px solid var(--ink);
+            background: #fff;
+            transform: rotate(-45deg);
+            margin-top: 14px;
+            margin-left: 12px;
+        }
+
+        .speech b {
+            color: var(--heart);
+            text-shadow: 1px 1px 0 #3a157a;
+        }
+
+        .content {
+            position: relative;
+            padding: 38px 26px 30px;
+            height: 100%; /* Important for centering */
+        }
+
+        .text-area {
+            min-height: 280px;
+            white-space: pre-wrap;
+            line-height: 1.75;
+            font-size: clamp(15px, 2.2vw, 20px);
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            color: #d1c6ff;
+            text-shadow:
+                1px 1px 0 rgba(29, 14, 61, 0.9),
+                0 0 1px rgba(16, 11, 29, 0.9);
+        }
+
+        /* Revised for State 2 */
+        #textArea.state2-center {
+            display: grid;
+            place-items: center;
+            height: 100%;
+            font-size: clamp(22px, 3.5vw, 36px);
+            text-align: center;
+            white-space: normal;
+            line-height: 1.3;
+            color: #ffffff;
+            text-shadow: 2px 2px 0 rgba(16, 11, 29, 0.9), 0 0 2px #fff;
+        }
+
+        .text-area.typing::after {
+            content: "_";
+            margin-left: 2px;
+            animation: blink 0.7s steps(1, end) infinite;
+        }
+
+        .hint {
+            min-height: 20px;
+            margin-top: 12px;
+            font-size: 13px;
+            letter-spacing: 0.04em;
+            color: #8c7ab1;
+            opacity: 0.85;
+            text-align: center;
+        }
+
+        .choices {
+            margin-top: 14px;
+            min-height: 65px;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+        }
+
+        .choices.show {
+            display: flex;
+        }
+
+        .choice-btn {
+            min-width: 132px;
+            border: 4px solid var(--ink);
+            border-radius: 0;
+            background: #ffffff;
+            color: #12161d;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            padding: 10px 16px;
+            cursor: pointer;
+            box-shadow: 4px 4px 0 #7a5cd3;
+            transition: transform 0.15s steps(2, end), opacity 0.15s linear;
+        }
+
+        .choice-btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 6px 6px 0 #7a5cd3;
+        }
+
+        #yesBtn.only {
+            animation: yesFlash 0.75s steps(2, end) infinite;
+            box-shadow: 6px 6px 0 #4c3293;
+            transform: scale(1.08);
+        }
+
+        #noBtn {
+            will-change: transform, opacity, filter;
+        }
+
+        #yesBtn.glitching {
+            animation: noGlitch 0.18s steps(2, end) infinite;
+            filter: hue-rotate(26deg) saturate(1.35);
+        }
+
+        #noBtn.only {
+            animation: yesFlash 0.75s steps(2, end) infinite;
+            box-shadow: 6px 6px 0 #4c3293;
+            transform: scale(1.08);
+        }
+
+        .love-field {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+
+        .love-field.active {
+            opacity: 1;
+        }
+
+        /* REVISED Pixel Heart (smaller, better pixel grid) */
+        .pixel-heart {
+            position: absolute;
+            left: var(--x);
+            bottom: -16px;
+            width: 2px;
+            height: 2px;
+            background: var(--heart);
+            box-shadow:
+                2px 0 var(--heart),
+                6px 0 var(--heart),
+                8px 0 var(--heart),
+                0 2px var(--heart),
+                2px 2px var(--heart),
+                4px 2px var(--heart),
+                6px 2px var(--heart),
+                8px 2px var(--heart),
+                10px 2px var(--heart),
+                0 4px var(--heart),
+                2px 4px var(--heart),
+                4px 4px var(--heart),
+                6px 4px var(--heart),
+                8px 4px var(--heart),
+                10px 4px var(--heart),
+                2px 6px var(--heart),
+                4px 6px var(--heart),
+                6px 6px var(--heart),
+                8px 6px var(--heart),
+                4px 8px var(--heart),
+                6px 8px var(--heart);
+            transform: translate(0, 0) scale(var(--scale));
+            animation: loveRise var(--dur) linear forwards;
+            opacity: 0;
+            filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.45));
+        }
+
+        .pixel-spark {
+            position: absolute;
+            left: var(--x);
+            bottom: var(--y);
+            width: 5px;
+            height: 5px;
+            background: var(--sparkle);
+            box-shadow:
+                0 -5px var(--sparkle),
+                0 5px var(--sparkle),
+                -5px 0 var(--sparkle),
+                5px 0 var(--sparkle);
+            animation: sparkFade var(--dur) linear forwards;
+            opacity: 0;
+            filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.35));
+        }
+        
+        /* NEW: Pixel Burst (chaos for state 2) */
+        .pixel-burst {
+            position: absolute;
+            left: var(--x);
+            top: var(--y);
+            width: 1px;
+            height: 1px;
+            background: #fff;
+            animation: burstExpand var(--dur) steps(3, end) forwards;
+            filter: blur(1px);
+        }
+
+@keyframes floatSlow {
+    0%   { transform: translate(0, 0); }
+    50%  { transform: translate(0, -12px); }
+    100% { transform: translate(0, 0); }
+}
+
+@keyframes floatWide {
+    0%   { transform: translate(0, 0); }
+    50%  { transform: translate(15px, -10px); }
+    100% { transform: translate(0, 0); }
+}
+
+@keyframes floatCrazy {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    25%  { transform: translate(10px, -6px) rotate(3deg); }
+    50%  { transform: translate(-8px, -12px) rotate(-3deg); }
+    75%  { transform: translate(6px, -4px) rotate(2deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        @keyframes speechBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        @keyframes noGlitch {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(2px, -1px); }
+            50% { transform: translate(-2px, 2px); }
+            75% { transform: translate(1px, 1px); }
+            100% { transform: translate(-1px, -2px); }
+        }
+
+        @keyframes yesFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.75; }
+        }
+
+        @keyframes loveRise {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0) scale(var(--scale));
+            }
+            10% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--drift), -560px) scale(calc(var(--scale) + 0.15));
+            }
+        }
+
+        @keyframes sparkFade {
+            0% { opacity: 0; transform: scale(0.8); }
+            20% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-55px) scale(1.2); }
+        }
+        
+        /* NEW State 2 animation */
+        @keyframes burstExpand {
+            0% { transform: scale(0); opacity: 1; background: #fff; box-shadow: 0 0 0 0 #fff; }
+            40% { transform: scale(15); opacity: 0.8; background: #ffffab; box-shadow: 0 0 4px 2px #fff836; }
+            100% { transform: scale(30); opacity: 0; background: #62caff; box-shadow: 0 0 8px 6px #7471ff; }
+        }
+
+        .cloud-1 { animation: floatSlow 6s ease-in-out infinite; }
+.cloud-2 { animation: floatWide 8s ease-in-out infinite; }
+.cloud-3 { animation: floatSlow 7s ease-in-out infinite; }
+
+.star-1 { animation: floatCrazy 5s ease-in-out infinite; }
+.star-2 { animation: floatWide 6s ease-in-out infinite; }
+
+.bolt-1 { animation: floatCrazy 4s ease-in-out infinite; }
+
+.ufo-tiny { animation: floatWide 9s ease-in-out infinite; }
+.cat-astronaut { animation: floatSlow 10s ease-in-out infinite; }
+
+    </style>
+</head>
+<body>
+    <main class="app" id="app">
+        <div class="stripe-overlay"></div>
+
+        <div class="decor-layer">
+            <svg class="sprite-svg cloud-1" viewBox="0 0 40 18" aria-hidden="true">
+                <rect x="4" y="8" width="30" height="8" fill="#a98fdf" />
+                <rect x="10" y="4" width="10" height="4" fill="#a98fdf" />
+                <rect x="20" y="6" width="8" height="2" fill="#a98fdf" />
+                <rect x="4" y="8" width="30" height="2" fill="#1d0e3d" />
+            </svg>
+
+            <svg class="sprite-svg cloud-2" viewBox="0 0 40 18" aria-hidden="true">
+                <rect x="4" y="8" width="30" height="8" fill="#a98fdf" />
+                <rect x="10" y="4" width="10" height="4" fill="#a98fdf" />
+                <rect x="20" y="6" width="8" height="2" fill="#a98fdf" />
+                <rect x="4" y="8" width="30" height="2" fill="#1d0e3d" />
+            </svg>
+
+            <svg class="sprite-svg cloud-3" viewBox="0 0 40 18" aria-hidden="true">
+                <rect x="4" y="8" width="30" height="8" fill="#cdb4ff" />
+                <rect x="10" y="4" width="10" height="4" fill="#cdb4ff" />
+                <rect x="20" y="6" width="8" height="2" fill="#cdb4ff" />
+                <rect x="4" y="8" width="30" height="2" fill="#1d0e3d" />
+            </svg>
+
+            <svg class="sprite-svg star-1" viewBox="0 0 18 18" aria-hidden="true">
+                <rect x="7" y="0" width="4" height="4" fill="#e7d432" />
+                <rect x="0" y="7" width="4" height="4" fill="#e7d432" />
+                <rect x="14" y="7" width="4" height="4" fill="#e7d432" />
+                <rect x="7" y="14" width="4" height="4" fill="#e7d432" />
+                <rect x="5" y="5" width="8" height="8" fill="#fffdab" />
+            </svg>
+
+            <svg class="sprite-svg star-2" viewBox="0 0 18 18" aria-hidden="true">
+                <rect x="7" y="0" width="4" height="4" fill="#e7d432" />
+                <rect x="0" y="7" width="4" height="4" fill="#e7d432" />
+                <rect x="14" y="7" width="4" height="4" fill="#e7d432" />
+                <rect x="7" y="14" width="4" height="4" fill="#e7d432" />
+                <rect x="5" y="5" width="8" height="8" fill="#fffdab" />
+            </svg>
+
+            <svg class="sprite-svg bolt-1" viewBox="0 0 16 20" aria-hidden="true">
+                <polygon points="6,0 15,0 8,8 13,8 1,20 6,11 2,11" fill="#e7d432"></polygon>
+            </svg>
+            
+            <svg class="sprite-svg planet-lavender" id="planetDecor" viewBox="0 0 120 120" aria-hidden="true">
+                <rect x="10" y="30" width="100" height="60" rx="30" fill="#a98fdf" />
+                <rect x="0" y="45" width="120" height="15" rx="5" fill="#52358c" />
+                <rect x="10" y="52" width="100" height="3" fill="#1d0e3d" />
+            </svg>
+            <svg class="sprite-svg ufo-tiny" viewBox="0 0 60 40" aria-hidden="true">
+                <rect x="5" y="15" width="50" height="15" rx="5" fill="#cdb4ff" />
+                <rect x="20" y="0" width="20" height="15" rx="10" fill="#cdb4ff" />
+                <rect x="25" y="25" width="3" height="10" fill="#ffffab"/>
+                <rect x="32" y="25" width="3" height="10" fill="#62caff"/>
+                <rect x="5" y="15" width="50" height="3" fill="#1d0e3d"/>
+            </svg>
+             <svg class="sprite-svg cat-astronaut" viewBox="0 0 80 80" aria-hidden="true">
+                 <rect x="20" y="10" width="40" height="40" rx="15" fill="#fff" />
+                 <rect x="15" y="25" width="10" height="10" fill="#fff"/>
+                 <rect x="55" y="25" width="10" height="10" fill="#fff"/>
+                 <rect x="25" y="20" width="10" height="10" fill="#1d0e3d"/>
+                 <rect x="45" y="20" width="10" height="10" fill="#1d0e3d"/>
+             </svg>
+
+        </div>
+
+        <div id="loveField" class="love-field" aria-hidden="true"></div>
+
+        <div class="start-screen" id="startScreen">
+            <div class="speech">CLICK TO START <br> <b>PURPLE MODE</b></div>
+        </div>
+
+        <section class="content">
+            <div class="text-area" id="textArea"></div>
+            <div class="hint" id="hint"></div>
+
+            <div class="choices" id="choices">
+                <button class="choice-btn" id="yesBtn" type="button">YES</button>
+                <button class="choice-btn" id="noBtn" type="button">NO</button>
+            </div>
+        </section>
+    </main>
+
+    <audio id="sanctuaryAudio" preload="auto" playsinline>
+        <source src="sanctuary.mpeg" type="audio/mpeg">
+    </audio>
+    <audio id="lanyAudio" preload="auto" playsinline>
+        <source src="lany.mpeg" type="audio/mpeg">
+    </audio>
+    <audio id="rcAudio" preload="auto" playsinline>
+        <source src="rc.mpeg" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // TEKS STATE 0: Teks penutup (regret) digabung ke sini
+        const TEXT_STATE0 = [
+            "hi rabiyatul ahdawiyah, ahdutt, ahdaaa, robiii, bibiii, ah sudalahh, aldaa, wiyahh, dan segala versi nama kamu",
+            "gimana lebarannya? was it good?? jujur kalo lebaran aku kinda lonelyy huhuu, u knowla kenapa aku bilang gitu.. yupp yuppp yuppp i lost my sanctuary.. my safest place but now somehow.. it found its way back to me again like my sanctuary opened its door for me, once moree and i just need you to knoww.. i'm truly sorryyy for everything... my sancuary",
+            "",
+            "anywayy do u regret the path u choose, with me?"
+        ].join("\n");
+
+        // TEKS STATE 1
+        const TEXT_STATE1 = [
+            "i dont wanna let u confused anymore bibii..",
+            "cause im finally done being confused myself and we both know what this is.. we loved each other, we trust each other so whyyy.. whyy.. after everything weve been through how did we never become an 'us'?",
+            "",
+            "soo.. bibii, can we try againn?",
+            "like, for real this time.. ",
+            "would u finally be my realest one.. my sanctuaryy?"
+        ].join("\n");
+
+        // TEKS STATE 2
+        const TEXT_STATE2 = [
+            "yessssss...",
+            "finallyyy, i have somewhere to come home to... and its youu bibiiiii",
+            "cz honestly... i feel like im nothing without u . i love u bibi."
+        ].join("\n");
+
+        const SANCTUARY_TRIGGER = "can we try againn?";
+        const SANCTUARY_TRIGGER_INDEX = TEXT_STATE1.indexOf(SANCTUARY_TRIGGER);
+
+        const TYPE_SPEED = 56;
+        const YES_GLITCH_STEPS = 30;
+        const YES_GLITCH_INTERVAL = 120;
+
+        const app = document.getElementById("app");
+        const startScreen = document.getElementById("startScreen");
+        const textArea = document.getElementById("textArea");
+        const hint = document.getElementById("hint");
+        const choices = document.getElementById("choices");
+        const yesBtn = document.getElementById("yesBtn");
+        const noBtn = document.getElementById("noBtn");
+        const sanctuaryAudio = document.getElementById("sanctuaryAudio");
+        const lanyAudio = document.getElementById("lanyAudio");
+        const rcAudio = document.getElementById("rcAudio");
+        const loveField = document.getElementById("loveField");
+        const planetDecor = document.getElementById("planetDecor");
+
+        let userInteracted = false;
+        let audioUnlocked = false;
+        let state = -1;
+        let typingVersion = 0;
+        let sanctuaryPlayed = false;
+        let yesGlitchTimer = null;
+        let yesGlitchStep = 0;
+        let loveSpawner = null;
+        let burstSpawner = null;
+
+        function sleep(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+
+        function randomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function setState(newState) {
+            state = newState;
+        }
+
+        async function unlockAudio() {
+            if (audioUnlocked) return;
+
+            const audios = [sanctuaryAudio, lanyAudio, rcAudio];
+            for (const audioEl of audios) {
+                try {
+                    audioEl.load();
+                    audioEl.muted = true;
+                    await audioEl.play();
+                    audioEl.pause();
+                    audioEl.currentTime = 0;
+                    audioEl.muted = false;
+                } catch (error) {
+                    audioEl.muted = false;
+                    console.warn("audio unlock failed:", error);
+                }
+            }
+
+            audioUnlocked = true;
+        }
+
+        async function safePlay(audioEl) {
+            if (!userInteracted) return;
+
+            try {
+                await audioEl.play();
+            } catch (firstError) {
+                try {
+                    audioEl.load();
+                    await audioEl.play();
+                } catch (secondError) {
+                    console.warn("audio play failed:", secondError || firstError);
+                }
+            }
+        }
+
+        function stopAudio(audioEl) {
+            audioEl.pause();
+            audioEl.currentTime = 0;
+        }
+
+        function playSanctuary() {
+            stopAudio(lanyAudio);
+            stopAudio(rcAudio);
+            sanctuaryAudio.currentTime = 0;
+            safePlay(sanctuaryAudio);
+        }
+
+        function playRc() {
+            stopAudio(lanyAudio);
+            stopAudio(sanctuaryAudio);
+            rcAudio.currentTime = 0;
+            safePlay(rcAudio);
+        }
+
+        function playLany() {
+            stopAudio(sanctuaryAudio);
+            stopAudio(rcAudio);
+            lanyAudio.currentTime = 0;
+            safePlay(lanyAudio);
+        }
+
+        function stopYesAutoGlitch() {
+            if (yesGlitchTimer) {
+                clearInterval(yesGlitchTimer);
+                yesGlitchTimer = null;
+            }
+            yesBtn.classList.remove("glitching");
+        }
+
+        function resetChoices() {
+            stopYesAutoGlitch();
+            yesGlitchStep = 0;
+            yesBtn.classList.remove("only");
+            noBtn.classList.remove("only");
+            yesBtn.style.transform = "translate(0, 0) scale(1)";
+            yesBtn.style.opacity = "1";
+            yesBtn.textContent = "YES";
+            yesBtn.style.pointerEvents = "auto";
+            noBtn.style.transform = "translate(0, 0) scale(1)";
+            noBtn.style.opacity = "1";
+            noBtn.textContent = "NO";
+            noBtn.style.pointerEvents = "auto";
+            choices.classList.remove("show");
+        }
+
+        function startYesAutoGlitch() {
+    noBtn.classList.add("glitching");
+    noBtn.style.pointerEvents = "none";
+
+    yesGlitchTimer = setInterval(() => {
+        if (state !== 1) {
+            stopYesAutoGlitch();
+            return;
+        }
+
+        yesGlitchStep += 1;
+
+        const driftX = randomInt(-220, 220);
+        const driftY = randomInt(-120, 120);
+        const rotate = randomInt(-45, 45);
+        const scale = Math.max(0.1, 1 - yesGlitchStep * 0.02);
+        const opacity = Math.max(0, 1 - yesGlitchStep * 0.025);
+
+        noBtn.style.transform = `
+            translate(${driftX}px, ${driftY}px)
+            rotate(${rotate}deg)
+            scale(${scale})
+        `;
+
+        noBtn.style.opacity = String(opacity);
+
+        // glitch random biar aneh
+        if (Math.random() < 0.25) {
+            noBtn.style.transform += ` scale(${Math.random() * 2})`;
+        }
+
+        if (yesGlitchStep >= 60) {
+            noBtn.style.opacity = "0";
+            noBtn.textContent = "";
+            stopYesAutoGlitch();
+            yesBtn.classList.add("only");
+            noBtn.classList.remove("glitching");
+        }
+
+    }, 100);
+}
+
+        function clearLoveField() {
+            loveField.innerHTML = "";
+        }
+
+        // Revised Sparkles for State 2
+        function spawnSpark(count = 12) {
+            for (let i = 0; i < count; i += 1) {
+                const spark = document.createElement("div");
+                spark.className = "pixel-spark";
+                spark.style.setProperty("--x", `${randomInt(5, 95)}%`);
+                spark.style.setProperty("--y", `${randomInt(2, 98)}%`);
+                spark.style.setProperty("--dur", `${randomInt(1200, 2400)}ms`);
+                loveField.appendChild(spark);
+                setTimeout(() => spark.remove(), 2600);
+            }
+        }
+        
+        // NEW State 2 Pixel Bursts
+        function spawnBurst(count = 10) {
+            for (let i = 0; i < count; i += 1) {
+                const burst = document.createElement("div");
+                burst.className = "pixel-burst";
+                burst.style.setProperty("--x", `${randomInt(10, 90)}%`);
+                burst.style.setProperty("--y", `${randomInt(10, 90)}%`);
+                burst.style.setProperty("--dur", `${randomInt(1600, 2900)}ms`);
+                loveField.appendChild(burst);
+                setTimeout(() => burst.remove(), 3100);
+            }
+        }
+
+        // Revised Hati-hati Pixel (heboh)
+        function spawnLoveBurst(count = 25) {
+            for (let i = 0; i < count; i += 1) {
+                const heart = document.createElement("div");
+                heart.className = "pixel-heart";
+                // Color variation: from lavender to purple-pink
+                const heartColor = randomInt(0, 1) ? "#c19cff" : "#d1c6ff";
+                heart.style.background = heartColor;
+                heart.style.boxShadow = `2px 0 ${heartColor}, 6px 0 ${heartColor}, 8px 0 ${heartColor}, 0 2px ${heartColor}, 2px 2px ${heartColor}, 4px 2px ${heartColor}, 6px 2px ${heartColor}, 8px 2px ${heartColor}, 10px 2px ${heartColor}, 0 4px ${heartColor}, 2px 4px ${heartColor}, 4px 4px ${heartColor}, 6px 4px ${heartColor}, 8px 4px ${heartColor}, 10px 4px ${heartColor}, 2px 6px ${heartColor}, 4px 6px ${heartColor}, 6px 6px ${heartColor}, 8px 6px ${heartColor}, 4px 8px ${heartColor}, 6px 8px ${heartColor}`;
+                
+                heart.style.setProperty("--x", `${randomInt(0, 96)}%`);
+                heart.style.setProperty("--dur", `${randomInt(3800, 6400)}ms`);
+                heart.style.setProperty("--scale", `${(Math.random() * 0.4 + 0.5).toFixed(2)}`); // smaller variations
+                heart.style.setProperty("--drift", `${randomInt(-110, 110)}px`);
+                loveField.appendChild(heart);
+
+                const ttl = randomInt(4200, 6800);
+                setTimeout(() => heart.remove(), ttl);
+            }
+
+            spawnSpark(randomInt(8, 14));
+            // Maybe a burst too
+            if(randomInt(0, 1)) spawnBurst(randomInt(2, 4));
+        }
+
+        function spawnBackgroundStars(count = 30) {
+    for (let i = 0; i < count; i++) {
+        const star = document.createElement("div");
+        star.className = "pixel-spark";
+        star.style.setProperty("--x", `${randomInt(0, 100)}%`);
+        star.style.setProperty("--y", `${randomInt(0, 100)}%`);
+        star.style.setProperty("--dur", `${randomInt(2000, 5000)}ms`);
+        loveField.appendChild(star);
+
+        setTimeout(() => star.remove(), 5000);
+    }
+}
+
+        // NEW Chaos Loop for State 2
+        function startChaosMode() {
+            stopChaosMode();
+            loveField.classList.add("active");
+            spawnLoveBurst(40);
+            spawnBurst(15);
+            spawnSpark(20);
+            
+            planetDecor.style.opacity = "1";
+
+            loveSpawner = setInterval(() => {
+                if (state !== 2) return;
+                spawnLoveBurst(randomInt(12, 18));
+            }, 640);
+            
+            // Add bursts and sparks on different timings
+            burstSpawner = setInterval(() => {
+                 if (state !== 2) return;
+                 spawnBurst(randomInt(4, 8));
+                 if(randomInt(0, 1)) spawnSpark(5);
+            }, 1800);
+        }
+
+        function stopChaosMode() {
+            if (loveSpawner) {
+                clearInterval(loveSpawner);
+                loveSpawner = null;
+            }
+             if (burstSpawner) {
+                clearInterval(burstSpawner);
+                burstSpawner = null;
+            }
+            loveField.classList.remove("active");
+            clearLoveField();
+            planetDecor.style.opacity = "0";
+        }
+
+        async function typeText(text, options = {}) {
+            const {
+                onChar = null,
+                speed = TYPE_SPEED,
+                append = false
+            } = options;
+
+            typingVersion += 1;
+            const currentTyping = typingVersion;
+            if (!append) {
+                textArea.textContent = "";
+            }
+            textArea.classList.add("typing");
+
+            for (let i = 0; i < text.length; i += 1) {
+                if (currentTyping !== typingVersion) return;
+
+                const char = text[i];
+                textArea.textContent += char;
+
+                if (typeof onChar === "function") {
+                    onChar(i, char);
+                }
+
+                let delay = speed;
+                if (char === "\n") delay += 190;
+                if (/[.,!?]/.test(char)) delay += 140;
+                await sleep(delay);
+            }
+
+            textArea.classList.remove("typing");
+        }
+
+        async function waitForContinue(autoDelayMs = 2600) {
+            hint.textContent = "klik di mana saja untuk lanjut...";
+
+            return new Promise((resolve) => {
+                let done = false;
+
+                const finish = () => {
+                    if (done) return;
+                    done = true;
+                    hint.textContent = "";
+                    app.removeEventListener("click", onContinueClick);
+                    resolve();
+                };
+
+                const onContinueClick = (event) => {
+                    if (event.target === yesBtn || event.target === noBtn || !startScreen.classList.contains("hidden")) {
+                        return;
+                    }
+                    finish();
+                };
+
+                app.addEventListener("click", onContinueClick);
+                setTimeout(finish, autoDelayMs);
+            });
+        }
+
+      async function runState0() {
+    setState(0);
+    stopChaosMode();
+    textArea.classList.remove("state2-center");
+    resetChoices();
+
+    playRc(); // play lagu dulu
+
+    await typeText(TEXT_STATE0);
+
+    // tunggu lagu selesai
+    await new Promise((resolve) => {
+        rcAudio.onended = resolve;
+    });
+
+await runState1();
+
+  }
+        
+
+        async function runState1() {
+            setState(1);
+            sanctuaryPlayed = false;
+            stopChaosMode();
+            textArea.classList.remove("state2-center");
+            resetChoices();
+            await typeText(TEXT_STATE1, {
+                onChar: (index) => {
+                    if (!sanctuaryPlayed && index === SANCTUARY_TRIGGER_INDEX) {
+                        sanctuaryPlayed = true;
+                        playSanctuary();
+                    }
+                }
+            });
+
+            choices.classList.add("show");
+            startYesAutoGlitch();
+        }
+
+      async function runState2() {
+    if (state === 2) return;
+    typingVersion += 1;
+
+    setState(2);
+    stopYesAutoGlitch();
+
+    stopAudio(sanctuaryAudio);
+    stopAudio(rcAudio);
+
+    choices.classList.remove("show");
+    hint.textContent = "";
+    
+    textArea.classList.add("state2-center");
+
+    // 🔥 LANGSUNG HEBOH DI AWAL
+    playLany();
+    startChaosMode(); // <<< FIX DI SINI
+
+    // typing tetap jalan
+    await typeText(TEXT_STATE2, {
+        speed: 65
+    });
+}
+
+yesBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    if (state !== 1) return;
+    runState2();
+});
+
+        noBtn.addEventListener("click", (event) => {
+            event.preventDefault();
+            if (state !== 1) return;
+            runState2();
+        });
+
+        startScreen.addEventListener("click", async () => {
+            if (userInteracted) return;
+            userInteracted = true;
+            startScreen.classList.add("hidden");
+            await unlockAudio();
+            runState0();
+        });
+    </script>
+</body>
+</html>
